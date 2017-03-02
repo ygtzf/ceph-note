@@ -1,5 +1,8 @@
 # ceph源码编译问题总结
 
+* 当前编译选项:
+  --with-jemalloc --without-tcmalloc --without-librocksdb-static --with-rados  --with-radosgw  --with-radosstriper
+
 * 编译Hammer版本，是要关掉rocksdb这个option的，也就是编译的时候带option: --without-librocksdb-static
 编译Jewel版本，是要打开rocksdb，好像是说bluestor要用， 编译的时候要将上年的option改为: --with-librocksdb-static
 
