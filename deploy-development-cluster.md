@@ -3,10 +3,12 @@
 ###在开发环境中搭建了一个虚拟的ceph cluster
 ####搭建过程:
 很简单，官网有说明: http://docs.ceph.com/docs/master/dev/quick_guide/
+
 1. 肯定是先得有ceph源码了，ceph源码在github上管理，可以直接clone:
    git clone https://github.com/ceph/ceph.git
 
 2. 在源码顶级目录下, 直接先执行 run-make-check.sh
+
    ygt@ygt:~/work/ceph/source/ceph-source$ ./run-make-check.sh
    这个脚本主要就是一个任务: 编译ceph:
    1. 检查依赖，安装依赖，install-dep.sh脚本负责。
@@ -59,12 +61,13 @@
 
 #### 问题
 1. 三个osd都起不来: log输出为:(ceph/src/out/xxx.log)
+```
 2017-03-03 15:18:34.960368 7fe100de5800 -1 osd.0 0 backend (filestore) is unable to support max object name[space] len
 2017-03-03 15:18:34.960372 7fe100de5800 -1 osd.0 0    osd max object name len = 2048
 2017-03-03 15:18:34.960373 7fe100de5800 -1 osd.0 0    osd max object namespace len = 256
 2017-03-03 15:18:34.960374 7fe100de5800 -1 osd.0 0 (36) File name too long
 2017-03-03 15:18:34.981221 7fe100de5800 -1  ** ERROR: osd init failed: (36) File name too long
-
+```
 > 解决:
 > Starting with the Jewel release, the ceph-osd daemon will refuse to start if the configured max object name cannot be safely stored on ext4. If the cluster is only being used with short object names (e.g., RBD only), you can continue using ext4 by setting the following configuration option:
 > 
