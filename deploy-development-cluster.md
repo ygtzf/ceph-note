@@ -10,23 +10,26 @@
 
 2. 在源码顶级目录下, 直接先执行 run-make-check.sh
 
-ygt@ygt:~/work/ceph/source/ceph-source$ ./run-make-check.sh
-这个脚本主要就是一个任务: 编译ceph:
-1. 检查依赖，安装依赖，install-dep.sh脚本负责。
-2. 编译ceph，所有编译出的ceph组件都是带debug选项编译的。本人还加了-g3 -O0（CFLAGS="-Wall -g3 -O0" CXXFLAGS="-Wall -g3 -O0"）,以方便gdb跟踪。
-   在编译的时候，该脚本会看看所在pc的cpu核数，然后多核编译: -jX (X为CPU核数)
-3. 跑很多单元测试，以保证ceph源码的函数都OK
-   这个脚本跑完挺长的，一方面是编译的时间，另外就是unittest花的时间更长。
+    ygt@ygt:~/work/ceph/source/ceph-source$ ./run-make-check.sh
+
+    这个脚本主要就是一个任务: 编译ceph:
+
+    1. 检查依赖，安装依赖，install-dep.sh脚本负责。
+    2. 编译ceph，所有编译出的ceph组件都是带debug选项编译的。本人还加了-g3 -O0（CFLAGS="-Wall -g3 -O0" CXXFLAGS="-Wall -g3 -O0"）,以方便gdb跟踪。
+        在编译的时候，该脚本会看看所在pc的cpu核数，然后多核编译: -jX (X为CPU核数)
+    3. 跑很多单元测试，以保证ceph源码的函数都OK
+        这个脚本跑完挺长的，一方面是编译的时间，另外就是unittest花的时间更长。
 
 3. 现在就可以直接跑虚拟ceph cluster：
 
-ygt@ygt:~/work/ceph/source/ceph-source/src$ MON=1 MDS=1 ./vstart.sh -d -n -x
-其中MON MDS都是环境变量，环境变量可以是: OSD,MDS,MON,RGW，这些环境变量的设置是指相应的服务实例个数(也就是该虚拟环境中每种组件跑几个服务）
--d(debug): 以debug模式运行，很多都debug level都设置为: 20/20
--n(new): 创建一个新的集群
--x: 使用cephx认证
-还有更多的参数, 可以直接通过./vstart.sh --help来查看。
-这样虚拟环境就起来了，下面先看看这个集群的样子(新媳妇要见人了 :) )
+    ygt@ygt:~/work/ceph/source/ceph-source/src$ MON=1 MDS=1 ./vstart.sh -d -n -x
+
+    其中MON MDS都是环境变量，环境变量可以是: OSD,MDS,MON,RGW，这些环境变量的设置是指相应的服务实例个数(也就是该虚拟环境中每种组件跑几个服务）
+    -d(debug): 以debug模式运行，很多都debug level都设置为: 20/20
+    -n(new): 创建一个新的集群
+    -x: 使用cephx认证
+    还有更多的参数, 可以直接通过./vstart.sh --help来查看。
+    这样虚拟环境就起来了，下面先看看这个集群的样子(新媳妇要见人了 :) )
 
 4. ygt@ygt:~/work/ceph/source/ceph-source/src$ ./ceph -s
 
@@ -50,6 +53,7 @@ ygt@ygt:~/work/ceph/source/ceph-source/src$ MON=1 MDS=1 ./vstart.sh -d -n -x
 6. 再次启动这个集群:
 
    ygt@ygt:~/work/ceph/source/ceph-source/src$ MON=1 MDS=1 ./vstart.sh -d -x
+
    注意: 不要加-n，不要new，不过也没啥关系，就是开发环境，随便搞。
 
 7. 要想摧毁整个环境，需要将dev和out两个目录删除了。
@@ -80,5 +84,5 @@ ygt@ygt:~/work/ceph/source/ceph-source/src$ MON=1 MDS=1 ./vstart.sh -d -n -x
 > 解决:
 > Starting with the Jewel release, the ceph-osd daemon will refuse to start if the configured max object name cannot be safely stored on ext4. If the cluster is only being used with short object names (e.g., RBD only), you can continue using ext4 by setting the following configuration option:
 > 
-> osd max object name len = 256
+> osd max object name len = 256 
 > osd max object namespace len = 64
