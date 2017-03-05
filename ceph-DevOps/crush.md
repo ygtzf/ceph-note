@@ -241,4 +241,8 @@ rule replicated_ruleset {
 }
 
 # end crush map 
+<<<<<<< HEAD
 ```
+=======
+```
+>>>>>>> 860956eafcbca9c24320cd989d5bcd795453de15
