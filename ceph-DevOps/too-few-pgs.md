@@ -105,7 +105,8 @@ if (!pg_map.pg_stat.empty())
     }
 ```
 
-解决：
+* 解决:
+
 1. 增加相应pool的pg数
 
 2. 删除多余的无用的pool，所以在ceph cluster中创建测试pool的时候，不要给太多的pg。
