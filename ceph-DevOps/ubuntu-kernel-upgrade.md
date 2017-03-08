@@ -23,6 +23,7 @@ ubutnu 有自己的kernel包的仓库： http://kernel.ubuntu.com/~kernel-ppa/ma
 * linux-headers-{kernel version}-generic_{kernel version}.{packge generate time}_{system architecture}.deb
 
 其中，
+
 kernel version就是第一步选择的kernel版本;
 
 package generate time就是deb包生成时间，这个不用关心；
@@ -30,13 +31,15 @@ package generate time就是deb包生成时间，这个不用关心；
 system architecture 是指你的操作系统架构，也就是多少位的系统，32位还是64位， 32位就选i386，64位就选amd64.
 
 **举例:**
+
 要升级4.4.52版本的内核， 就要下载如下包：
 
-linux-headers-4.4.52-040452_4.4.52-040452.201702260631_all.deb
-linux-headers-4.4.52-040452-generic_4.4.52-040452.201702260631_amd64.deb
-linux-image-4.4.52-040452-generic_4.4.52-040452.201702260631_amd64.deb
+> linux-headers-4.4.52-040452_4.4.52-040452.201702260631_all.deb
+> linux-headers-4.4.52-040452-generic_4.4.52-040452.201702260631_amd64.deb
+> linux-image-4.4.52-040452-generic_4.4.52-040452.201702260631_amd64.deb
 
-**注：**
+**注:**
+
 包名中带lowlatency的是低延迟应用需要下载的包，比如：主要用来做视频处理的系统等。
 
 ## Step 3. 安装kernel包:
@@ -50,4 +53,5 @@ linux-image-4.4.52-040452-generic_4.4.52-040452.201702260631_amd64.deb
 ## Step 5. 验证内核是否升级到指定版本:
 
 > uname -r
+>
 > 4.4.52-30-generic
