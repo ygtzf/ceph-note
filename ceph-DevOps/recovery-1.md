@@ -127,8 +127,103 @@ root@host2:~# update-rc.d ceph disable
 ```
 
 ## 日志盘修复
+日志盘的修复其实就是更换日志盘, 见另一篇文章: links
 
 ## osd重启
+启动osd服务, 但是有10个osd起不来, 接下来就逐个分析原因, 个个击破.
 
 ## osd恢复
+1. 有两个osd的leveldb出错, 具体log没保留下来, 很遗憾.
+   解决:
+     download leveldb python 模块, 可以使用pip, 可以下载源码安装, 链接: https://pypi.python.org/pypi/leveldb
+     修复leveldb: RepairDB的参数是leveldb的具体存储路径, 对于osd, 就是current/omap
+     ```
+     root@host3:~/leveldb-0.20# python
+	 Python 2.7.6 (default, Oct 26 2016, 20:30:19)
+     [GCC 4.8.4] on linux2
+     Type "help", "copyright", "credits" or "license" for more information.
+     >>> import leveldb
+     >>>
+     >>>
+     >>> leveldb.RepairDB("/var/lib/ceph/osd/ceph-44/current/omap/")
+     >>>
+     ```
 
+**接下来的几个问题一直没有解决, 最重要的是osd直接crash, 无从谈及后续的pg recovery, 虽然尝试了很多方法, 包括把问题从正常的sod中导出, 然后加入进来, 都不起作用. 好在这是一个测试环境, 时间紧张, 我们只能先放下, 转而使用多cephfs的特性来继续测试cephfs, 后续还要跟代码来看看问题所在.**
+2. osd log如下:
+```
+    -7> 2017-03-31 12:27:34.025244 7fdaeb424800 15 filestore(/var/lib/ceph/osd/ceph-47) omap_get_values 1.1daa_head/#1:55b80000::::head#
+    -6> 2017-03-31 12:27:34.025350 7fdaeb424800 15 filestore(/var/lib/ceph/osd/ceph-47) omap_get_values 1.1daa_head/#1:55b80000::::head# = -1
+    -5> 2017-03-31 12:27:34.025356 7fdaeb424800 15 filestore(/var/lib/ceph/osd/ceph-47) collection_getattr /var/lib/ceph/osd/ceph-47/current/1.1daa_head 'remove' len 1
+    -4> 2017-03-31 12:27:34.025378 7fdaeb424800 10 filestore(/var/lib/ceph/osd/ceph-47) collection_getattr /var/lib/ceph/osd/ceph-47/current/1.1daa_head 'remove' len 1 = -61
+    -3> 2017-03-31 12:27:34.025381 7fdaeb424800 10 osd.47 8625 pgid 1.1daa coll 1.1daa_head
+    -2> 2017-03-31 12:27:34.025385 7fdaeb424800 15 filestore(/var/lib/ceph/osd/ceph-47) omap_get_values 1.1daa_head/#1:55b80000::::head#
+    -1> 2017-03-31 12:27:34.025447 7fdaeb424800 15 filestore(/var/lib/ceph/osd/ceph-47) omap_get_values 1.1daa_head/#1:55b80000::::head# = -1
+     0> 2017-03-31 12:27:34.027079 7fdaeb424800 -1 osd/PG.cc: In function 'static int PG::peek_map_epoch(ObjectStore*, spg_t, epoch_t*, ceph::bufferlist*)' thread 7fdaeb424800 time 2017-03-31 12:27:34.025452
+osd/PG.cc: 2947: FAILED assert(0 == "unable to open pg metadata")
+
+ ceph version 10.2.6 (656b5b63ed7c43bd014bcafd81b001959d5f089f)
+ 1: (ceph::__ceph_assert_fail(char const*, char const*, int, char const*)+0x8b) [0x7fdaeaeba26b]
+ 2: (PG::peek_map_epoch(ObjectStore*, spg_t, unsigned int*, ceph::buffer::list*)+0x727) [0x7fdaea906c97]
+ 3: (OSD::load_pgs()+0x8bd) [0x7fdaea86840d]
+ 4: (OSD::init()+0x1f74) [0x7fdaea87a734]
+ 5: (main()+0x29d1) [0x7fdaea7e1d71]
+ 6: (__libc_start_main()+0xf5) [0x7fdae72a9ec5]
+ 7: (()+0x36a957) [0x7fdaea82a957]
+ NOTE: a copy of the executable, or `objdump -rdS <executable>` is needed to interpret this.
+```
+   未解决......
+
+3. osd log如下:
+```
+    -3> 2017-04-01 10:24:08.243324 7f10393eb700  0 log_channel(cluster) log [INF] : 1.1fb5 starting backfill to osd.51 from (0'0,0'0] MAX to 8625'202097
+    -2> 2017-04-01 10:24:08.244198 7f10393eb700  5 osd.65 pg_epoch: 14087 pg[1.1fb5( v 8625'202097 (8612'199066,8625'202097] local-les=14087 n=87794 ec=350 les/c/f 12937/12937/0 14082/14086/14086) [65,51]/[65,57] r=0 lpr=14086 pi=9325-14085/17 bft=51 crt=8625'202097 lcod 0'0 mlcod 0'0 activating+remapped] enter Started/Primary/Active/Activating
+    -1> 2017-04-01 10:24:08.244211 7f1036be6700  0 log_channel(cluster) log [INF] : 1.14 starting backfill to osd.51 from (0'0,0'0] MAX to 8625'201676
+     0> 2017-04-01 10:24:08.246532 7f1037be8700 -1 osd/PGLog.h: In function 'void PGLog::IndexedLog::claim_log_and_clear_rollback_info(const pg_log_t&)' thread 7f1037be8700 time 2017-04-01 10:24:08.243637
+osd/PGLog.h: 111: FAILED assert(rollback_info_trimmed_to_riter == log.rbegin())
+
+ ceph version 10.2.6 (656b5b63ed7c43bd014bcafd81b001959d5f089f)
+ 1: (ceph::__ceph_assert_fail(char const*, char const*, int, char const*)+0x8b) [0x7f10824d026b]
+ 2: (PG::RecoveryState::Stray::react(PG::MLogRec const&)+0x63e) [0x7f1081f497ae]
+ 3: (boost::statechart::simple_state<PG::RecoveryState::Stray, PG::RecoveryState::Started, boost::mpl::list<mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na, mpl_::na>, (boost::statechart::history_mode)0>::react_impl(boost::statechart::event_base const&, void const*)+0x1f4) [0x7f1081f84044]
+ 4: (boost::statechart::state_machine<PG::RecoveryState::RecoveryMachine, PG::RecoveryState::Initial, std::allocator<void>, boost::statechart::null_exception_translator>::send_event(boost::statechart::event_base const&)+0x5b) [0x7f1081f6e38b]
+ 5: (PG::handle_peering_event(std::shared_ptr<PG::CephPeeringEvt>, PG::RecoveryCtx*)+0x1d5) [0x7f1081f367b5]
+ 6: (OSD::process_peering_events(std::list<PG*, std::allocator<PG*> > const&, ThreadPool::TPHandle&)+0x249) [0x7f1081e953a9]
+ 7: (OSD::PeeringWQ::_process(std::list<PG*, std::allocator<PG*> > const&, ThreadPool::TPHandle&)+0x12) [0x7f1081edd242]
+ 8: (ThreadPool::worker(ThreadPool::WorkThread*)+0xa5e) [0x7f10824c17ce]
+ 9: (ThreadPool::WorkThread::entry()+0x10) [0x7f10824c26b0]
+ 10: (()+0x8184) [0x7f10809be184]
+ 11: (clone()+0x6d) [0x7f107e998bed]
+ NOTE: a copy of the executable, or `objdump -rdS <executable>` is needed to interpret this.
+```
+	未解决......
+
+4. osd log如下:
+```
+    -3> 2017-04-01 09:07:03.256009 7f087f7e8700  1 osd.10 pg_epoch: 13637 pg[1.498( v 8625'201557 (8612'198458,8625'201557] local-les=13512 n=87583 ec=350 les/c/f 13512/13512/0 13636/13637/9027) [39,10] r=1 lpr=13637 pi=981-13636/70 crt=8625'201557 lcod 0'0 inactive NOTIFY] state<Start>: transitioning to Stray
+    -2> 2017-04-01 09:07:03.256570 7f087f7e8700  1 osd.10 pg_epoch: 13637 pg[1.ae4( v 8625'201280 (8612'198271,8625'201280] local-les=13531 n=87307 ec=350 les/c/f 13531/13532/0 13636/13637/9026) [15,10] r=1 lpr=13637 pi=951-13636/70 crt=8625'201280 lcod 0'0 inactive NOTIFY] state<Start>: transitioning to Stray
+    -1> 2017-04-01 09:07:03.257173 7f087efe7700  1 osd.10 pg_epoch: 13637 pg[1.4e7( v 8625'200805 (8612'197750,8625'200805] local-les=13631 n=87570 ec=350 les/c/f 13512/9635/0 13636/13637/13636) [10,73]/[10] r=0 lpr=13637 pi=9634-13636/42 crt=8625'200805 lcod 0'0 mlcod 0'0 remapped] state<Start>: transitioning to Primary
+     0> 2017-04-01 09:07:03.267047 7f0874fff700 -1 osd/ReplicatedPG.cc: In function 'virtual void ReplicatedPG::on_local_recover(const hobject_t&, const ObjectRecoveryInfo&, ObjectContextRef, ObjectStore::Transaction*)' thread 7f0874fff700 time 2017-04-01 09:07:03.263494
+osd/ReplicatedPG.cc: 209: FAILED assert(is_primary())
+
+ ceph version 10.2.6 (656b5b63ed7c43bd014bcafd81b001959d5f089f)
+ 1: (ceph::__ceph_assert_fail(char const*, char const*, int, char const*)+0x8b) [0x7f08cc6d726b]
+ 2: (ReplicatedPG::on_local_recover(hobject_t const&, ObjectRecoveryInfo const&, std::shared_ptr<ObjectContext>, ObjectStore::Transaction*)+0x6c1) [0x7f08cc1acda1]
+ 3: (ReplicatedBackend::handle_push(pg_shard_t, PushOp&, PushReplyOp*, ObjectStore::Transaction*)+0x1f2) [0x7f08cc251d52]
+ 4: (ReplicatedBackend::_do_push(std::shared_ptr<OpRequest>)+0x11c) [0x7f08cc25202c]
+ 5: (ReplicatedBackend::handle_message(std::shared_ptr<OpRequest>)+0x3f6) [0x7f08cc260e66]
+ 6: (ReplicatedPG::do_request(std::shared_ptr<OpRequest>&, ThreadPool::TPHandle&)+0xed) [0x7f08cc1bd28d]
+ 7: (OSD::dequeue_op(boost::intrusive_ptr<PG>, std::shared_ptr<OpRequest>, ThreadPool::TPHandle&)+0x3f5) [0x7f08cc07bc85]
+ 8: (PGQueueable::RunVis::operator()(std::shared_ptr<OpRequest>&)+0x5d) [0x7f08cc07bead]
+ 9: (OSD::ShardedOpWQ::_process(unsigned int, ceph::heartbeat_handle_d*)+0x869) [0x7f08cc0808c9]
+ 10: (ShardedThreadPool::shardedthreadpool_worker(unsigned int)+0x877) [0x7f08cc6c7767]
+ 11: (ShardedThreadPool::WorkThreadSharded::entry()+0x10) [0x7f08cc6c9690]
+ 12: (()+0x8184) [0x7f08cabc5184]
+ 13: (clone()+0x6d) [0x7f08c8b9fbed]
+ NOTE: a copy of the executable, or `objdump -rdS <executable>` is needed to interpret this.
+```
+	未解决......
+
+## 尝试解决
+1. 找到问题pg, 从它的所在正常的osd中来导出pg, 再导入有问题的osd.
+2. 直接force_create问题pg
