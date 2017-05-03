@@ -39,3 +39,20 @@
   3. autoreconf -fvi 【为了生成./configure】
   4. ./configure  【为了生成 Makefile】
   5. OK
+
+* 制作ceph deb包的时候, hack包版本
+直接修改debian/changelog: (在开头加上如下几行， 这个是debian做包时，需要查看的文件，本文件是对发布版本的记录， 我们hack的改变一下版本（10.2.6-2就是hack的，默认是10.2.6-1）)
+
+```
+ceph (10.2.6-2) stable; urgency=medium
+
+  * New upstream release
+
+ -- Ceph Release Team <ceph-maintainers@ceph.com>  Tue, 05 Apr 2017 17:29:39 +0000
+
+ceph (10.2.6-1) stable; urgency=medium
+
+  * New upstream release
+
+ -- Ceph Release Team <ceph-maintainers@ceph.com>  Tue, 01 Apr 2017 13:29:39 +0000
+```
